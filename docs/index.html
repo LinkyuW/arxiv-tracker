@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>arXiv 论文追踪器</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- 导航栏 -->
+        <nav class="navbar">
+            <div class="container">
+                <h1 class="logo">📚 arXiv 论文追踪器</h1>
+                <p class="subtitle">AI驱动的学术论文发现和总结平台</p>
+            </div>
+        </nav>
+
+        <!-- 主容器 -->
+        <main class="container">
+            <!-- 搜索区域 -->
+            <section class="search-section">
+                <div class="search-box">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        placeholder="输入研究领域关键词 (如: deep learning, quantum computing 等)"
+                        class="search-input"
+                    >
+                    <button id="searchBtn" class="btn btn-primary">搜索</button>
+                    <button id="clearBtn" class="btn btn-secondary">清空</button>
+                </div>
+                
+                <div class="search-options">
+                    <label>
+                        <input type="checkbox" id="aiSummary" checked>
+                        使用AI总结
+                    </label>
+                    <label>
+                        最多显示论文数:
+                        <select id="maxResults">
+                            <option value="10">10</option>
+                            <option value="50">50</option>
+                            <option value="100" selected>100</option>
+                        </select>
+                    </label>
+                </div>
+            </section>
+
+            <!-- 加载指示器 -->
+            <div id="loading" class="loading hidden">
+                <div class="spinner"></div>
+                <p>正在加载论文数据...</p>
+            </div>
+
+            <!-- 错误提示 -->
+            <div id="error" class="error-box hidden"></div>
+
+            <!-- 结果统计 -->
+            <div id="stats" class="stats hidden">
+                <p>找到 <span id="resultCount">0</span> 篇论文</p>
+            </div>
+
+            <!-- 论文列表 -->
+            <section id="results" class="papers-section"></section>
+        </main>
+
+        <!-- 脚注 -->
+        <footer class="footer">
+            <p>© 2024 arXiv 论文追踪器 | 
+               <a href="https://arxiv.org/" target="_blank">arXiv.org</a> | 
+               <a href="#" id="cacheStats">缓存统计</a>
+            </p>
+        </footer>
+    </div>
+
+    <!-- 缓存统计弹窗 -->
+    <div id="statsModal" class="modal hidden">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>缓存统计</h2>
+            <div id="statsContent"></div>
+        </div>
+    </div>
+
+    <!-- 论文详情弹窗 -->
+    <div id="detailModal" class="modal hidden">
+        <div class="modal-content modal-large">
+            <span class="close">&times;</span>
+            <h2 id="detailTitle"></h2>
+            <div class="modal-meta">
+                <p><strong>作者:</strong> <span id="detailAuthors"></span></p>
+                <p><strong>发布时间:</strong> <span id="detailDate"></span></p>
+                <p><strong>分类:</strong> <span id="detailCategory"></span></p>
+            </div>
+            <div class="modal-section">
+                <h3>摘要</h3>
+                <p id="detailSummary"></p>
+            </div>
+            <div class="modal-section" id="aiSummarySection">
+                <h3>AI 总结</h3>
+                <p id="detailAISummary"></p>
+            </div>
+            <div class="modal-actions">
+                <a id="detailPdfLink" class="btn btn-primary" target="_blank">查看PDF</a>
+                <a id="detailArxivLink" class="btn btn-secondary" target="_blank">arXiv链接</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

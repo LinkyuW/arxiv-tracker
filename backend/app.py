@@ -22,8 +22,14 @@ app = Flask(__name__)
 env = os.getenv('FLASK_ENV', 'development')
 app.config.from_object(config.get(env, config['default']))
 
-# 启用CORS
-CORS(app)
+# 启用CORS (允许所有来源，生产环境建议限制)
+CORS(app, resources={
+    r"/api/*": {
+        "origins": ["*"],
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
+    }
+})
 
 # 初始化服务
 arxiv_service = ArxivService(
