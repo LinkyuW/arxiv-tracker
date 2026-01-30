@@ -48,14 +48,37 @@ enhancement_service = PaperEnhancementService()
 
 # AI服务（如果提供了API密钥）
 ai_service = None
-if app.config.get('GEMINI_API_KEY'):
-    try:
-        ai_service = AIService(
-            api_key=app.config['GEMINI_API_KEY'],
-            model=app.config.get('AI_MODEL', 'gemini-pro')
-        )
-    except Exception as e:
-        print(f"Warning: Could not initialize AI service: {e}")
+ai_provider = app.config.get('AI_PROVIDER', 'qwen3').lower()
+
+if ai_provider == 'qwen3':
+    if app.config.get('QWEN3_API_KEY'):
+        try:
+            ai_service = AIService(
+                api_key=app.config['QWEN3_API_KEY'],
+                model=app.config.get('AI_MODEL', 'free:QwQ-32B'),
+                provider='qwen3',
+                api_endpoint=app.config.get('QWEN3_API_ENDPOINT', 'https://api.suanli.cn/v1')
+            )
+            print(f"✓ Qwen3 AI service initialized successfully")
+        except Exception as e:
+            print(f"⚠ Warning: Could not initialize Qwen3 AI service: {e}")
+    else:
+        print("⚠ Warning: QWEN3_API_KEY not set in environment")
+elif ai_provider == 'gemini':
+    if app.config.get('GEMINI_API_KEY'):
+        try:
+            ai_service = AIService(
+                api_key=app.config['GEMINI_API_KEY'],
+                model=app.config.get('AI_MODEL', 'gemini-pro'),
+                provider='gemini'
+            )
+            print(f"✓ Gemini AI service initialized successfully")
+        except Exception as e:
+            print(f"⚠ Warning: Could not initialize Gemini AI service: {e}")
+    else:
+        print("⚠ Warning: GEMINI_API_KEY not set in environment")
+else:
+    print(f"⚠ Warning: Unknown AI provider: {ai_provider}")
 
 # 论文分析服务（用于生成总结和聚合）
 analysis_service = PaperAnalysisService(ai_service=ai_service)

@@ -1,15 +1,22 @@
 # 📚 arXiv 论文追踪器
 
-一个AI驱动的学术论文发现和总结平台。轻松搜索arXiv上的论文，利用Google Gemini AI自动生成论文摘要。
+> 🙏 **致谢**：本项目采用 **Free-QWQ** 免费AI API服务，感谢 [共绩算力](https://www.gongjiyun.com/) 提供的算力支持，让所有人都能享受到高质量的AI能力！
+> 
+> - 🤖 **Free-QWQ**: https://qwq.aigpu.cn
+> - 💾 **共绩算力**: https://www.gongjiyun.com/
+
+一个AI驱动的学术论文发现和总结平台。轻松搜索arXiv上的论文，利用免费的Qwen3 AI自动生成论文摘要。
 
 ## 功能特性
 
-- **论文搜索**: 从arXiv快速搜索最近5年内的相关论文
-- **AI总结**: 使用Google Gemini API自动生成论文的中文总结
+- **论文搜索**: 从arXiv快速搜索最近3年内的相关论文
+- **AI总结**: 使用Qwen3 (Free-QWQ) 免费API自动生成论文的中文总结
+- **发展脉络**: AI生成的研究领域3年发展趋势分析
+- **季度汇总**: 按季度统计论文数量、发表地点和代表作品
 - **智能缓存**: 缓存搜索结果和总结，减少API调用
 - **漂亮UI**: 响应式设计，支持桌面和移动设备
 - **论文详情**: 查看完整的论文信息、摘要、作者和PDF链接
-- **收藏功能**: 标记感兴趣的论文（可扩展）
+- **发表信息**: 显示论文发表会议/期刊、CCF等级和引用次数
 
 ## 技术栈
 
@@ -17,7 +24,8 @@
 - **框架**: Flask 2.3.0
 - **API**: 
   - arXiv 官方API (免费)
-  - Google Gemini Pro API (免费配额)
+  - Qwen3 (Free-QWQ) API (免费额度充足)
+  - Google Gemini Pro API (备选方案)
 - **数据库**: SQLite/PostgreSQL (可选)
 - **缓存**: 文件系统缓存
 
@@ -80,26 +88,49 @@ pip install -r requirements.txt
 cp .env.example .env
 ```
 
-编辑 `.env` 文件:
+编辑 `.env` 文件，配置AI服务（默认使用Qwen3 Free-QWQ）:
 
 ```env
 # Flask配置
 FLASK_ENV=development
 FLASK_DEBUG=True
 
-# Google Gemini API密钥 (从 https://aistudio.google.com/app/apikeys 获取)
-GEMINI_API_KEY=your-api-key-here
+# AI服务配置 (默认使用Qwen3)
+AI_PROVIDER=qwen3
+AI_MODEL=free:QwQ-32B
+
+# Qwen3 API配置 (Free-QWQ)
+# 官网: https://qwq.aigpu.cn
+# 算力提供者: https://www.gongjiyun.com/
+QWEN3_API_KEY=sk-W0rpStc95T7JVYVwDYc29IyirjtpPPby6SozFMQr17m8KWeo
+QWEN3_API_ENDPOINT=https://api.suanli.cn/v1
+
+# 如果需要使用Google Gemini API而不是Qwen3，取消注释以下行:
+# AI_PROVIDER=gemini
+# GEMINI_API_KEY=your-gemini-api-key-here
+# AI_MODEL=gemini-pro
 
 # 其他配置保持默认即可
 ```
 
-### 4. 获取Google Gemini API密钥
+**重要**: 项目默认配置使用 **Qwen3 Free-QWQ** API，已包含有效的API密钥和端点。开箱即用，无需额外配置！
+
+### 4. 获取API密钥（可选）
+
+#### 使用Qwen3 (推荐 - 完全免费)
+
+1. 访问 [Free-QWQ](https://qwq.aigpu.cn)
+2. 查看API使用说明
+3. 已在 `.env` 中提供默认密钥，直接使用即可
+
+#### 使用Google Gemini API (备选)
 
 1. 访问 [Google AI Studio](https://aistudio.google.com/app/apikeys)
 2. 点击 "Create API Key"
-3. 复制API密钥到 `.env` 文件中的 `GEMINI_API_KEY`
+3. 复制API密钥
+4. 在 `.env` 中配置 `GEMINI_API_KEY` 并设置 `AI_PROVIDER=gemini`
 
-**注意**: Google Gemini 提供免费配额，新用户每月有充足的API调用次数。
+**注意**: Google Gemini 提供免费配额，但Qwen3更方便（已预配置）。
 
 ### 5. 启动后端服务
 
@@ -218,7 +249,15 @@ POST /api/cache/clear
 - ✅ 可靠稳定
 - 限制: 单个IP每秒最多3个请求
 
-### Google Gemini API
+### Qwen3 (Free-QWQ) API ⭐ 推荐
+- ✅ **完全免费** - 无需付费
+- ✅ **开箱即用** - 已提供有效API密钥
+- ✅ **高质量推理** - 使用QwQ-32B模型
+- ✅ **中文支持** - 原生中文处理
+- ✅ **由共绩算力提供** - https://www.gongjiyun.com/
+- 详见: https://qwq.aigpu.cn
+
+### Google Gemini API (备选)
 - ✅ 免费配额充足 (新用户)
 - ✅ 高质量的AI模型
 - ✅ 支持中文
@@ -226,7 +265,7 @@ POST /api/cache/clear
 
 **成本估算** (基于免费配额):
 - 搜索100篇论文: **$0** (arXiv)
-- 总结100篇论文: **$0** (在免费配额内)
+- 总结100篇论文: **$0** (Qwen3或Gemini免费层)
 - 总成本: **$0**
 
 ## 配置选项

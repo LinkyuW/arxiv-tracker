@@ -19,8 +19,15 @@ class Config:
     ARXIV_MAX_RESULTS = 100  # 单次查询最大论文数
     
     # AI配置
+    AI_PROVIDER = os.getenv('AI_PROVIDER', 'qwen3')  # 默认使用Qwen3
+    AI_MODEL = os.getenv('AI_MODEL', 'free:QwQ-32B')
+    
+    # Qwen3 API配置
+    QWEN3_API_KEY = os.getenv('QWEN3_API_KEY')
+    QWEN3_API_ENDPOINT = os.getenv('QWEN3_API_ENDPOINT', 'https://api.suanli.cn/v1')
+    
+    # Google Gemini API配置（备用）
     GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
-    AI_MODEL = 'gemini-pro'  # 使用的AI模型
     
     # 缓存配置
     CACHE_ENABLED = True
