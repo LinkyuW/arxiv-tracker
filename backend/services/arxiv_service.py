@@ -43,13 +43,9 @@ class ArxivService:
         """
         max_results = max_results or self.max_results
         
-        # 计算时间范围
-        cutoff_date = datetime.now() - timedelta(days=days_back)
-        date_str = cutoff_date.strftime('%Y%m%d%H%M%S')
-        
-        # 构建查询字符串
-        # 在标题、摘要和作者中搜索关键词
-        search_query = f'(all:"{query}") AND submittedDate:[{date_str}Z TO 9999999999]'
+        # arXiv API 查询格式：在所有字段中搜索
+        # 简化查询，直接搜索关键词，不限制日期
+        search_query = f'all:{query}'
         
         params = {
             'search_query': search_query,
@@ -60,15 +56,18 @@ class ArxivService:
         }
         
         try:
+            print(f"[DEBUG] Searching arXiv with query: {search_query}")
             response = requests.get(
                 self.BASE_URL,
                 params=params,
                 timeout=self.timeout
             )
+            print(f"[DEBUG] Response status: {response.status_code}")
             response.raise_for_status()
             
             # 解析RSS feed
             feed = feedparser.parse(response.content)
+            print(f"[DEBUG] Found {len(feed.entries)} entries")
             
             papers = []
             for entry in feed.entries:
