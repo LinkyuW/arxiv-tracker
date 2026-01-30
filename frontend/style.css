@@ -160,6 +160,24 @@ main {
     100% { transform: rotate(360deg); }
 }
 
+@keyframes shimmer {
+    0% { background-position: -1000px 0; }
+    100% { background-position: 1000px 0; }
+}
+
+.skeleton-loader {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+    border-radius: 4px;
+}
+
+.loading-placeholder {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
 /* 错误提示 */
 .error-box {
     background-color: #fee2e2;
@@ -213,18 +231,26 @@ main {
 }
 
 .section-card {
-    background: white;
+    background: linear-gradient(135deg, #ffffff 0%, rgba(0, 0, 0, 0.02) 100%);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     padding: 1.5rem;
     flex: 1;
     min-height: 300px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s;
+}
+
+.section-card:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .section-card p {
     line-height: 1.8;
     color: var(--text-color);
     font-size: 0.95rem;
+    margin: 0;
+    word-break: break-word;
 }
 
 /* 季度聚合容器 */
@@ -243,44 +269,90 @@ main {
     border-radius: 6px;
     padding: 1rem;
     transition: all 0.3s;
+    position: relative;
+    overflow: hidden;
+}
+
+.quarterly-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
 }
 
 .quarterly-card:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
 }
 
 .quarterly-header {
     font-weight: 600;
     color: var(--primary-color);
-    margin-bottom: 0.5rem;
-    font-size: 0.95rem;
+    margin-bottom: 0.8rem;
+    font-size: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.quarterly-header::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--primary-color);
 }
 
 .quarterly-stat {
     display: flex;
-    gap: 0.5rem;
-    font-size: 0.85rem;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.9rem;
     color: var(--text-light);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.8rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .quarterly-stat strong {
-    color: var(--text-color);
+    color: var(--primary-color);
+    font-size: 1.1rem;
 }
 
 .quarterly-venues {
     font-size: 0.8rem;
     color: var(--text-light);
-    margin-top: 0.5rem;
+    margin-top: 0.8rem;
+    padding-top: 0.8rem;
+    border-top: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.quarterly-venues strong {
+    display: block;
+    margin-bottom: 0.5rem;
+    color: var(--text-color);
 }
 
 .quarterly-venues span {
     display: inline-block;
-    background-color: var(--bg-color);
-    padding: 0.2rem 0.5rem;
-    border-radius: 3px;
+    background: linear-gradient(135deg, var(--bg-color) 0%, rgba(0, 0, 0, 0.03) 100%);
+    padding: 0.3rem 0.7rem;
+    border-radius: 4px;
     margin-right: 0.5rem;
-    margin-top: 0.3rem;
+    margin-bottom: 0.3rem;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    font-weight: 500;
+    transition: all 0.2s;
+}
+
+.quarterly-venues span:hover {
+    background: linear-gradient(135deg, var(--primary-color) 0%, rgba(0, 0, 0, 0.1) 100%);
+    color: white;
+    transform: scale(1.05);
 }
 
 .paper-card {

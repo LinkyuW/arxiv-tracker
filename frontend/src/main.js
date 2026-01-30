@@ -354,9 +354,24 @@ function displayTrajectory(trajectory) {
     if (!trajectoryContent) return;
     
     if (trajectory) {
-        trajectoryContent.innerHTML = `<p>${escapeHtml(trajectory)}</p>`;
+        // 检查是否为有效文本
+        if (typeof trajectory === 'string' && trajectory.trim().length > 0) {
+            trajectoryContent.innerHTML = `<div style="line-height: 1.8; word-break: break-word;">${escapeHtml(trajectory)}</div>`;
+        } else {
+            trajectoryContent.innerHTML = `
+                <div style="color: var(--text-light); text-align: center; padding: 2rem 1rem;">
+                    <p>✨ 发展脉络总结生成中...</p>
+                    <p style="font-size: 0.9rem; margin-top: 0.5rem;">AI正在分析论文数据，请稍候</p>
+                </div>
+            `;
+        }
     } else {
-        trajectoryContent.innerHTML = '<p style="color: var(--text-light);">暂无发展脉络总结</p>';
+        trajectoryContent.innerHTML = `
+            <div style="color: var(--text-light); text-align: center; padding: 2rem 1rem;">
+                <p>⚠️ 暂无发展脉络总结</p>
+                <p style="font-size: 0.9rem; margin-top: 0.5rem;">请确保已启用AI总结功能或论文数据充分</p>
+            </div>
+        `;
     }
 }
 
@@ -366,37 +381,78 @@ function displayQuarterly(quarterlyData) {
     if (!quarterlyContent) return;
     
     if (!quarterlyData || quarterlyData.length === 0) {
-        quarterlyContent.innerHTML = '<p style="color: var(--text-light);">暂无季度数据</p>';
+        quarterlyContent.innerHTML = `
+            <div style="color: var(--text-light); text-align: center; padding: 2rem 1rem;">
+                <p>📊 暂无季度数据</p>
+                <p style="font-size: 0.9rem; margin-top: 0.5rem;">请尝试调整搜索条件</p>
+            </div>
+        `;
         return;
     }
     
-    // 生成季度卡片HTML
-    const cardsHtml = quarterlyData.map(quarterly => `
-        <div class="quarterly-card">
-            <div class="quarterly-header">${quarterly.quarter}</div>
-            <div class="quarterly-stat">
-                <strong>论文数:</strong> ${quarterly.paper_count}篇
+    try {
+        // 计算趋势（相邻季度的对比）
+        let previousCount = null;
+        const trendsMap = {};
+        
+        // 从后向前遍历（因为数据按时间倒序）
+        for (let i = quarterlyData.length - 1; i >= 0; i--) {
+            const current = quarterlyData[i];
+            if (previousCount !== null) {
+                const change = current.paper_count - previousCount;
+                const trendPercent = Math.round((change / previousCount) * 100);
+                trendsMap[current.quarter] = { change, trendPercent };
+            }
+            previousCount = current.paper_count;
+        }
+        
+        // 生成季度卡片HTML
+        const cardsHtml = quarterlyData.map((quarterly, index) => {
+            const trend = trendsMap[quarterly.quarter];
+            const trendIcon = trend ? (trend.change > 0 ? '📈' : trend.change < 0 ? '📉' : '➡️') : '';
+            const trendText = trend ? ` ${trendIcon} ${Math.abs(trend.trendPercent)}%` : '';
+            
+            // 验证数据
+            const paperCount = parseInt(quarterly.paper_count) || 0;
+            const venues = Array.isArray(quarterly.top_venues) ? quarterly.top_venues : [];
+            const titles = Array.isArray(quarterly.sample_titles) ? quarterly.sample_titles : [];
+            
+            return `
+                <div class="quarterly-card">
+                    <div class="quarterly-header">${escapeHtml(quarterly.quarter)}</div>
+                    <div class="quarterly-stat">
+                        <span>论文数: <strong>${paperCount}</strong>篇${trendText}</span>
+                    </div>
+                    ${venues.length > 0 ? `
+                        <div class="quarterly-venues">
+                            <strong>主要会议:</strong>
+                            ${venues.map(v => `<span>${escapeHtml(v)}</span>`).join('')}
+                        </div>
+                    ` : ''}
+                    ${titles.length > 0 ? `
+                        <div style="font-size: 0.8rem; color: var(--text-light); margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid rgba(0,0,0,0.05);">
+                            <strong style="display: block; margin-bottom: 0.3rem;">代表论文:</strong>
+                            <ul style="margin: 0.3rem 0; padding-left: 1.2rem;">
+                                ${titles.slice(0, 2).map(t => `
+                                    <li style="font-size: 0.75rem; margin-bottom: 0.2rem;" title="${escapeHtml(t)}">${escapeHtml(t.substring(0, 50))}${t.length > 50 ? '...' : ''}</li>
+                                `).join('')}
+                            </ul>
+                        </div>
+                    ` : ''}
+                </div>
+            `;
+        }).join('');
+        
+        quarterlyContent.innerHTML = cardsHtml;
+    } catch (error) {
+        console.error('Error displaying quarterly data:', error);
+        quarterlyContent.innerHTML = `
+            <div style="color: var(--text-light); text-align: center; padding: 2rem 1rem;">
+                <p>❌ 显示季度数据时出错</p>
+                <p style="font-size: 0.9rem; margin-top: 0.5rem; color: red;">${escapeHtml(error.message)}</p>
             </div>
-            ${quarterly.top_venues && quarterly.top_venues.length > 0 ? `
-                <div class="quarterly-venues">
-                    <strong>主要会议:</strong><br>
-                    ${quarterly.top_venues.map(v => `<span>${v}</span>`).join('')}
-                </div>
-            ` : ''}
-            ${quarterly.sample_titles && quarterly.sample_titles.length > 0 ? `
-                <div style="font-size: 0.8rem; color: var(--text-light); margin-top: 0.5rem;">
-                    <strong>代表论文:</strong>
-                    <ul style="margin: 0.3rem 0; padding-left: 1.2rem;">
-                        ${quarterly.sample_titles.slice(0, 2).map(t => `
-                            <li style="font-size: 0.75rem;">${escapeHtml(t.substring(0, 50))}...</li>
-                        `).join('')}
-                    </ul>
-                </div>
-            ` : ''}
-        </div>
-    `).join('');
-    
-    quarterlyContent.innerHTML = cardsHtml;
+        `;
+    }
 }
 
 // ==================== 错误处理 ====================
