@@ -37,10 +37,6 @@
                         使用AI总结
                     </label>
                     <label>
-                        <input type="checkbox" id="enableAuthority" checked>
-                        按权威性排序
-                    </label>
-                    <label>
                         最多显示论文数:
                         <select id="maxResults">
                             <option value="10">10</option>
@@ -96,11 +92,10 @@
                 <p><strong>作者:</strong> <span id="detailAuthors"></span></p>
                 <p><strong>发布时间:</strong> <span id="detailDate"></span></p>
                 <p><strong>分类:</strong> <span id="detailCategory"></span></p>
-                <div id="authoritySection" class="authority-info hidden">
-                    <p><strong>权威性评分:</strong> <span id="detailAuthorityScore"></span></p>
-                    <p><strong>权威等级:</strong> <span id="detailAuthorityLevel"></span></p>
-                    <p><strong>引用次数:</strong> <span id="detailCitations"></span></p>
-                    <p><strong>评分原因:</strong> <span id="detailAuthorityReasons"></span></p>
+                <div id="publicationSection" class="publication-info hidden">
+                    <p><strong>发表会议/期刊:</strong> <span id="detailPublicationVenue"></span></p>
+                    <p><strong>CCF等级:</strong> <span id="detailCCFGrade"></span></p>
+                    <p><strong>引用次数:</strong> <span id="detailCitationCount"></span></p>
                 </div>
             </div>
             <div class="modal-section">
@@ -118,7 +113,6 @@
         </div>
     </div>
 
-    <script src="config.js"></script>
-    <script src="main.js"></script>
+    <script src="src/main.js"></script>
 </body>
 </html>

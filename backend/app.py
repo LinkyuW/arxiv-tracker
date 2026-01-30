@@ -11,7 +11,7 @@ from config import config
 from services.arxiv_service import ArxivService
 from services.ai_service import AIService
 from services.cache_service import CacheService
-from services.authority_service import AuthorityService
+from services.authority_service import PaperEnhancementService
 
 # 加载环境变量
 load_dotenv()
@@ -42,8 +42,8 @@ cache_service = CacheService(
     expiry_days=app.config.get('CACHE_EXPIRY_DAYS', 30)
 )
 
-# 权威性评分服务
-authority_service = AuthorityService()
+# 论文信息增强服务
+enhancement_service = PaperEnhancementService()
 
 # AI服务（如果提供了API密钥）
 ai_service = None
@@ -84,8 +84,6 @@ def search_papers():
         - query: 搜索关键词 (必需)
         - days_back: 搜索多少天内的论文 (可选，默认1825天=5年)
         - max_results: 返回结果数量 (可选，默认100)
-        - sort_by: 排序方式 (可选，authority/date, 默认authority)
-        - enable_authority: 是否启用权威性排序 (可选，默认true)
     """
     query = request.args.get('query', '').strip()
     
@@ -97,11 +95,9 @@ def search_papers():
     
     days_back = request.args.get('days_back', type=int, default=365*5)
     max_results = request.args.get('max_results', type=int, default=100)
-    sort_by = request.args.get('sort_by', 'authority')  # authority or date
-    enable_authority = request.args.get('enable_authority', 'true').lower() == 'true'
     
     # 检查缓存
-    cache_key = f'search:{query}:{days_back}:{sort_by}'
+    cache_key = f'search:{query}:{days_back}'
     cached_result = cache_service.get(cache_key)
     
     if cached_result:
@@ -115,11 +111,9 @@ def search_papers():
     # 从arXiv获取数据
     papers = arxiv_service.search_papers(query, days_back, max_results)
     
-    # 添加权威性评分
-    if papers and enable_authority:
-        papers = authority_service.sort_papers_by_authority(papers)
-    
+    # 为论文添加发表信息（会议/期刊名称、CCF等级、引用数）
     if papers:
+        papers = enhancement_service.enrich_papers(papers)
         # 缓存结果
         cache_service.set(cache_key, papers)
     
@@ -127,8 +121,7 @@ def search_papers():
         'status': 'success',
         'message': f'找到 {len(papers)} 篇论文',
         'data': papers,
-        'from_cache': False,
-        'sort_by': sort_by
+        'from_cache': False
     })
 
 
@@ -155,9 +148,9 @@ def get_paper(arxiv_id):
 
 
 @app.route('/api/authority/score', methods=['POST'])
-def get_authority_score():
+def get_publication_info():
     """
-    获取论文的权威性评分
+    获取论文的发表信息（会议/期刊 + CCF等级）
     
     请求体:
         {
@@ -176,11 +169,22 @@ def get_authority_score():
         }), 400
     
     papers = data['papers']
-    results = authority_service.batch_calculate_authority(papers)
+    results = []
+    
+    for paper in papers:
+        enhanced = enhancement_service.enrich_paper(paper)
+        results.append({
+            'arxiv_id': paper.get('arxiv_id', ''),
+            'title': paper.get('title', ''),
+            'publication_venue': enhanced.get('publication_venue'),
+            'publication_type': enhanced.get('publication_type'),
+            'ccf_grade': enhanced.get('ccf_grade'),
+            'citation_count': enhanced.get('citation_count'),
+        })
     
     return jsonify({
         'status': 'success',
-        'message': f'计算了 {len(results)} 篇论文的权威性',
+        'message': f'获取了 {len(results)} 篇论文的发表信息',
         'data': results
     })
 

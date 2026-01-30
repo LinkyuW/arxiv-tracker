@@ -1,185 +1,119 @@
 """
-论文权威性评分服务
-用于获取论文的引用次数、发表会议等信息，并计算权威性评分
+论文信息增强服务
+用于检测论文发表的会议/期刊，和获取引用次数
 """
 import requests
-from typing import Dict, Optional, List
+from typing import Dict, Optional, List, Tuple
 import json
 import time
 from datetime import datetime, timedelta
 
-class AuthorityService:
-    """论文权威性评分服务"""
+class PaperEnhancementService:
+    """论文信息增强服务 - 获取会议/期刊信息和引用数据"""
     
     def __init__(self):
-        """初始化权威性评分服务"""
+        """初始化服务"""
         self.cache = {}
         self.cache_expiry = 7 * 24 * 3600  # 7天缓存
         
-        # CCF A类会议列表
-        self.ccf_a_conferences = self._load_ccf_conferences()
-        
-        # 权威期刊列表 (顶级AI/ML期刊)
-        self.top_journals = {
-            'JMLR',  # Journal of Machine Learning Research
-            'TPAMI',  # IEEE TPAMI
-            'IJCV',   # International Journal of Computer Vision
-            'Neural Networks',
-            'JAIR',   # Journal of AI Research
-            'MLJ',    # Machine Learning Journal
-            'TNN',    # IEEE TNN
-            'TSMC',   # IEEE TSMC
-        }
+        # 加载会议和期刊配置
+        self.conferences = self._load_conferences()
+        self.journals = self._load_journals()
     
-    def _load_ccf_conferences(self) -> Dict[str, int]:
-        """加载CCF A类会议列表，返回会议和权重"""
+    def _load_conferences(self) -> Dict:
+        """加载会议配置"""
         return {
-            # 计算机视觉
-            'CVPR': 10,
-            'ICCV': 10,
-            'ECCV': 10,
+            # CCF A类
+            'CVPR': {'name': 'IEEE/CVF Conference on Computer Vision and Pattern Recognition', 'ccf': 'A'},
+            'ICCV': {'name': 'International Conference on Computer Vision', 'ccf': 'A'},
+            'ECCV': {'name': 'European Conference on Computer Vision', 'ccf': 'A'},
+            'ICML': {'name': 'International Conference on Machine Learning', 'ccf': 'A'},
+            'NeurIPS': {'name': 'Neural Information Processing Systems', 'ccf': 'A', 'aliases': ['NIPS']},
+            'ICLR': {'name': 'International Conference on Learning Representations', 'ccf': 'A'},
+            'AAAI': {'name': 'AAAI Conference on Artificial Intelligence', 'ccf': 'A'},
+            'IJCAI': {'name': 'International Joint Conference on Artificial Intelligence', 'ccf': 'A'},
+            'ACL': {'name': 'Annual Meeting of the Association for Computational Linguistics', 'ccf': 'A'},
+            'EMNLP': {'name': 'Conference on Empirical Methods in Natural Language Processing', 'ccf': 'A'},
+            'NAACL': {'name': 'North American Chapter of ACL', 'ccf': 'A'},
+            'SIGIR': {'name': 'Special Interest Group on Information Retrieval', 'ccf': 'A'},
+            'COLT': {'name': 'Conference on Learning Theory', 'ccf': 'A'},
+            'STOC': {'name': 'ACM Symposium on Theory of Computing', 'ccf': 'A'},
+            'FOCS': {'name': 'IEEE Symposium on Foundations of Computer Science', 'ccf': 'A'},
             
-            # 机器学习和AI
-            'ICML': 10,
-            'NeurIPS': 10,
-            'ICLR': 9,
-            'AAAI': 9,
-            'IJCAI': 9,
+            # CCF B类
+            'ICPR': {'name': 'International Conference on Pattern Recognition', 'ccf': 'B'},
+            'IJCNN': {'name': 'International Joint Conference on Neural Networks', 'ccf': 'B'},
+            'ICRA': {'name': 'IEEE International Conference on Robotics and Automation', 'ccf': 'B'},
+            'IROS': {'name': 'IEEE/RSJ International Conference on Intelligent Robots and Systems', 'ccf': 'B'},
+            'KDD': {'name': 'ACM SIGKDD Conference on Knowledge Discovery and Data Mining', 'ccf': 'B'},
+            'NIPS': {'name': 'Neural Information Processing Systems', 'ccf': 'A'},  # NIPS = NeurIPS
+            'SODA': {'name': 'Symposium on Discrete Algorithms', 'ccf': 'B'},
             
-            # 自然语言处理
-            'ACL': 9,
-            'EMNLP': 9,
-            'NAACL': 9,
-            
-            # 其他AI顶级会议
-            'JMLR': 9,  # 期刊，但权威性极高
-            'Science': 10,
-            'Nature': 10,
-            'Nature Machine Intelligence': 10,
+            # CCF C类
+            'CAI': {'name': 'China AI Conference', 'ccf': 'C'},
         }
     
-    def calculate_authority_score(
-        self,
-        paper: Dict,
-        citation_count: Optional[int] = None,
-        is_ccf_a: bool = False
-    ) -> Dict:
+    def _load_journals(self) -> Dict:
+        """加载期刊配置"""
+        return {
+            # CCF A类期刊
+            'JMLR': {'name': 'Journal of Machine Learning Research', 'ccf': 'A'},
+            'TPAMI': {'name': 'IEEE TPAMI', 'ccf': 'A'},
+            'IJCV': {'name': 'International Journal of Computer Vision', 'ccf': 'A'},
+            
+            # CCF B类期刊
+            'TNN': {'name': 'IEEE Transactions on Neural Networks', 'ccf': 'B'},
+            'TSMC': {'name': 'IEEE TSMC', 'ccf': 'B'},
+            'JAIR': {'name': 'Journal of AI Research', 'ccf': 'B'},
+            
+            # 顶级期刊（即使不在CCF中，也要标注）
+            'Nature': {'name': 'Nature', 'ccf': 'N/A', 'prestigious': True},
+            'Science': {'name': 'Science', 'ccf': 'N/A', 'prestigious': True},
+        }
+    
+    def detect_publication_info(self, paper: Dict) -> Dict:
         """
-        计算论文的权威性评分
+        检测论文的发表信息（会议/期刊 + CCF等级）
         
         Args:
             paper: 论文信息字典
-            citation_count: 引用次数（可选，如果为None则尝试获取）
-            is_ccf_a: 是否是CCF A类会议论文
             
         Returns:
-            包含评分和元数据的字典
+            发表信息字典，包含会议/期刊名称、CCF等级等
         """
-        score = 0
-        reasons = []
-        badges = []
-        
-        # 1. CCF A类会议标识 (权重: 30分)
-        if is_ccf_a:
-            score += 30
-            reasons.append('CCF A类会议论文')
-            badges.append('CCF-A')
-        elif self._check_ccf_a_from_metadata(paper):
-            score += 30
-            reasons.append('CCF A类会议论文（从元数据识别）')
-            badges.append('CCF-A')
-        
-        # 2. 权威期刊 (权重: 25分)
-        if self._check_top_journal(paper):
-            score += 25
-            reasons.append('顶级权威期刊')
-            badges.append('Top-Journal')
-        
-        # 3. 引用次数 (权重: 30分)
-        if citation_count is None:
-            # 尝试从缓存或外部API获取
-            citation_count = self._get_citation_count(paper)
-        
-        if citation_count is not None and citation_count > 0:
-            # 对数增长：0-10引用=5分，10-100=15分，100+=30分
-            if citation_count >= 100:
-                score += 30
-                badges.append(f'Citation-{citation_count}+')
-                reasons.append(f'高引用次数（{citation_count}+）')
-            elif citation_count >= 10:
-                score += 15
-                badges.append(f'Citation-{citation_count}')
-                reasons.append(f'中等引用次数（{citation_count}）')
-            else:
-                score += 5
-                reasons.append(f'低引用次数（{citation_count}）')
-        
-        # 4. 发表年份 (权重: 15分，最近的更权威)
-        published_date = paper.get('published', '')
-        if published_date:
-            try:
-                pub_year = datetime.fromisoformat(published_date.replace('Z', '+00:00')).year
-                current_year = datetime.now().year
-                years_ago = current_year - pub_year
-                
-                if years_ago == 0:
-                    score += 15
-                    reasons.append('最新发表')
-                    badges.append('Recent')
-                elif years_ago == 1:
-                    score += 10
-                    reasons.append('去年发表')
-                elif years_ago <= 3:
-                    score += 5
-                    reasons.append('近年发表')
-            except:
-                pass
-        
-        return {
-            'authority_score': min(score, 100),  # 最高100分
-            'reasons': reasons,
-            'badges': badges,
-            'citation_count': citation_count,
-            'level': self._score_to_level(score)
-        }
-    
-    def _score_to_level(self, score: int) -> str:
-        """将评分转换为等级"""
-        if score >= 85:
-            return '★★★'  # 顶级
-        elif score >= 70:
-            return '★★'   # 高级
-        elif score >= 50:
-            return '★'    # 中级
-        else:
-            return '○'    # 普通
-    
-    def _check_ccf_a_from_metadata(self, paper: Dict) -> bool:
-        """从论文元数据中检查是否是CCF A类会议"""
-        title = paper.get('title', '').upper()
-        arxiv_id = paper.get('arxiv_id', '')
-        
-        # 简单的启发式检查：在标题或分类中查找CCF A会议名称
-        for conf in self.ccf_a_conferences.keys():
-            if conf.upper() in title:
-                return True
-        
-        return False
-    
-    def _check_top_journal(self, paper: Dict) -> bool:
-        """检查是否发表在顶级期刊"""
         title = paper.get('title', '').upper()
         summary = paper.get('summary', '').upper()
         
-        for journal in self.top_journals:
-            if journal.upper() in title or journal.upper() in summary:
-                return True
+        publication_info = {
+            'venue': None,  # 会议/期刊名称
+            'venue_type': None,  # 'conference' or 'journal'
+            'ccf_grade': None,  # 'A', 'B', 'C' 或 None
+            'is_prestigious': False,  # 是否是顶级期刊/会议
+        }
         
-        return False
+        # 检测会议
+        for conf_abbr, conf_info in self.conferences.items():
+            if conf_abbr.upper() in title or conf_abbr.upper() in summary:
+                publication_info['venue'] = conf_abbr
+                publication_info['venue_type'] = 'conference'
+                publication_info['ccf_grade'] = conf_info['ccf']
+                publication_info['is_prestigious'] = conf_info['ccf'] == 'A'
+                return publication_info
+        
+        # 检测期刊
+        for journal_abbr, journal_info in self.journals.items():
+            if journal_abbr.upper() in title or journal_abbr.upper() in summary:
+                publication_info['venue'] = journal_abbr
+                publication_info['venue_type'] = 'journal'
+                publication_info['ccf_grade'] = journal_info['ccf']
+                publication_info['is_prestigious'] = journal_info.get('prestigious', False) or journal_info['ccf'] == 'A'
+                return publication_info
+        
+        return publication_info
     
-    def _get_citation_count(self, paper: Dict) -> Optional[int]:
+    def get_citation_count(self, paper: Dict) -> Optional[int]:
         """
-        获取论文的引用次数（通过缓存或API）
+        获取论文的引用次数
         
         Args:
             paper: 论文信息
@@ -197,70 +131,118 @@ class AuthorityService:
             if time.time() - timestamp < self.cache_expiry:
                 return cached_data
         
-        # 尝试通过Google Scholar API获取（这里需要配置API密钥）
-        # 暂时返回None，需要配置额外的API服务
-        # citation_count = self._query_google_scholar(title)
+        # 尝试通过Google Scholar API获取
+        citation_count = self._fetch_from_google_scholar(title)
         
-        # 临时方案：使用启发式估计
-        # 可以基于论文年份和发表会议
-        return None
+        # 缓存结果
+        if citation_count is not None:
+            self.add_to_cache(arxiv_id, citation_count)
+        
+        return citation_count
     
-    def sort_papers_by_authority(
-        self,
-        papers: List[Dict]
-    ) -> List[Dict]:
+    def _fetch_from_google_scholar(self, title: str) -> Optional[int]:
         """
-        按权威性排序论文
+        从Google Scholar获取论文引用次数
+        
+        支持两种方式：
+        1. 使用 SerpAPI (推荐) - 需要API密钥
+        2. 使用 scholarly 库 - 免费但可能被限流
         
         Args:
-            papers: 论文列表
+            title: 论文标题
             
         Returns:
-            排序后的论文列表（权威性高的在前）
+            引用次数或None
         """
-        papers_with_score = []
-        
-        for paper in papers:
-            authority_info = self.calculate_authority_score(paper)
-            papers_with_score.append({
-                **paper,
-                **authority_info
-            })
-        
-        # 按评分从高到低排序
-        return sorted(
-            papers_with_score,
-            key=lambda x: (
-                x['authority_score'],
-                x['citation_count'] if x['citation_count'] else 0
-            ),
-            reverse=True
-        )
+        try:
+            # 方式1: 尝试使用 SerpAPI (需要配置API_KEY)
+            # import os
+            # api_key = os.getenv('SERPAPI_API_KEY')
+            # if api_key:
+            #     return self._fetch_via_serpapi(title, api_key)
+            
+            # 方式2: 尝试使用 scholarly 库（需要: pip install scholarly）
+            # 注意：Google Scholar会对频繁请求进行限流，建议使用代理
+            try:
+                from scholarly import scholarly
+                search_query = scholarly.search_pubs(title)
+                pub = next(search_query)
+                citation_count = pub.get('num_citations', 0)
+                return citation_count if citation_count > 0 else None
+            except ImportError:
+                # scholarly 库未安装
+                return None
+            except Exception as e:
+                # 网络错误、被限流等
+                print(f"[DEBUG] Failed to fetch from Google Scholar: {e}")
+                return None
+                
+        except Exception as e:
+            print(f"[ERROR] Error fetching citation count: {e}")
+            return None
     
-    def batch_calculate_authority(
-        self,
-        papers: List[Dict]
-    ) -> List[Dict]:
+    def _fetch_via_serpapi(self, title: str, api_key: str) -> Optional[int]:
         """
-        批量计算论文权威性
+        使用 SerpAPI 获取引用次数（需要付费）
         
         Args:
-            papers: 论文列表
+            title: 论文标题
+            api_key: SerpAPI密钥
             
         Returns:
-            带有权威性评分的论文列表
+            引用次数或None
         """
-        results = []
+        try:
+            url = 'https://serpapi.com/search'
+            params = {
+                'q': title,
+                'engine': 'google_scholar',
+                'api_key': api_key,
+                'hl': 'en',
+            }
+            response = requests.get(url, params=params, timeout=10)
+            
+            if response.status_code == 200:
+                data = response.json()
+                if 'organic_results' in data and len(data['organic_results']) > 0:
+                    first_result = data['organic_results'][0]
+                    return first_result.get('inline_links', {}).get('cited_by', {}).get('total', None)
+            
+            return None
+        except Exception as e:
+            print(f"[ERROR] SerpAPI error: {e}")
+            return None
+    
+    def enrich_paper(self, paper: Dict, citation_count: Optional[int] = None) -> Dict:
+        """
+        为论文添加增强信息
         
-        for paper in papers:
-            authority_info = self.calculate_authority_score(paper)
-            results.append({
-                'arxiv_id': paper.get('arxiv_id', ''),
-                'title': paper.get('title', ''),
-                **authority_info
-            })
+        Args:
+            paper: 原始论文数据
+            citation_count: 可选的引用次数
+            
+        Returns:
+            添加了发表信息和引用数的论文数据
+        """
+        # 检测发表信息
+        pub_info = self.detect_publication_info(paper)
         
-        return results
+        # 获取引用数
+        if citation_count is None:
+            citation_count = self.get_citation_count(paper)
+        
+        # 返回增强后的论文数据
+        return {
+            **paper,
+            'publication_venue': pub_info['venue'],
+            'publication_type': pub_info['venue_type'],
+            'ccf_grade': pub_info['ccf_grade'],
+            'citation_count': citation_count,
+        }
+    
+    def enrich_papers(self, papers: List[Dict]) -> List[Dict]:
+        """批量增强论文信息"""
+        return [self.enrich_paper(p) for p in papers]
     
     def add_to_cache(self, arxiv_id: str, citation_count: int):
         """缓存引用次数"""
