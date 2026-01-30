@@ -19,6 +19,11 @@ const API_CONFIG = {
   timeout: 30000,
 };
 
+// 设置全局 API_BASE_URL 供 main.js 使用
+if (typeof window !== 'undefined') {
+  window.API_BASE_URL = API_CONFIG.baseURL;
+}
+
 // 导出配置
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = API_CONFIG;

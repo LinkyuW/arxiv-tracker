@@ -1,0 +1,157 @@
+{
+  "ccf_a_conferences": {
+    "CVPR": {
+      "name": "IEEE/CVF Conference on Computer Vision and Pattern Recognition",
+      "category": "Computer Vision",
+      "weight": 10,
+      "aliases": ["CVPR"]
+    },
+    "ICCV": {
+      "name": "International Conference on Computer Vision",
+      "category": "Computer Vision",
+      "weight": 10,
+      "aliases": ["ICCV"]
+    },
+    "ECCV": {
+      "name": "European Conference on Computer Vision",
+      "category": "Computer Vision",
+      "weight": 10,
+      "aliases": ["ECCV"]
+    },
+    "ICML": {
+      "name": "International Conference on Machine Learning",
+      "category": "Machine Learning",
+      "weight": 10,
+      "aliases": ["ICML"]
+    },
+    "NeurIPS": {
+      "name": "Neural Information Processing Systems",
+      "category": "Machine Learning",
+      "weight": 10,
+      "aliases": ["NeurIPS", "NIPS"]
+    },
+    "ICLR": {
+      "name": "International Conference on Learning Representations",
+      "category": "Machine Learning",
+      "weight": 9,
+      "aliases": ["ICLR"]
+    },
+    "AAAI": {
+      "name": "AAAI Conference on Artificial Intelligence",
+      "category": "Artificial Intelligence",
+      "weight": 9,
+      "aliases": ["AAAI"]
+    },
+    "IJCAI": {
+      "name": "International Joint Conference on Artificial Intelligence",
+      "category": "Artificial Intelligence",
+      "weight": 9,
+      "aliases": ["IJCAI"]
+    },
+    "ACL": {
+      "name": "Annual Meeting of the Association for Computational Linguistics",
+      "category": "Natural Language Processing",
+      "weight": 9,
+      "aliases": ["ACL"]
+    },
+    "EMNLP": {
+      "name": "Conference on Empirical Methods in Natural Language Processing",
+      "category": "Natural Language Processing",
+      "weight": 9,
+      "aliases": ["EMNLP"]
+    },
+    "NAACL": {
+      "name": "North American Chapter of the Association for Computational Linguistics",
+      "category": "Natural Language Processing",
+      "weight": 9,
+      "aliases": ["NAACL"]
+    },
+    "SIGIR": {
+      "name": "Special Interest Group on Information Retrieval",
+      "category": "Information Retrieval",
+      "weight": 9,
+      "aliases": ["SIGIR"]
+    },
+    "COLT": {
+      "name": "Conference on Learning Theory",
+      "category": "Machine Learning Theory",
+      "weight": 9,
+      "aliases": ["COLT"]
+    },
+    "STOC": {
+      "name": "Annual ACM Symposium on Theory of Computing",
+      "category": "Theory",
+      "weight": 9,
+      "aliases": ["STOC"]
+    },
+    "FOCS": {
+      "name": "IEEE Symposium on Foundations of Computer Science",
+      "category": "Theory",
+      "weight": 9,
+      "aliases": ["FOCS"]
+    },
+    "SODA": {
+      "name": "Symposium on Discrete Algorithms",
+      "category": "Theory",
+      "weight": 8,
+      "aliases": ["SODA"]
+    }
+  },
+  "top_journals": {
+    "JMLR": {
+      "name": "Journal of Machine Learning Research",
+      "category": "Machine Learning",
+      "weight": 9
+    },
+    "TPAMI": {
+      "name": "IEEE Transactions on Pattern Analysis and Machine Intelligence",
+      "category": "Computer Vision",
+      "weight": 9
+    },
+    "IJCV": {
+      "name": "International Journal of Computer Vision",
+      "category": "Computer Vision",
+      "weight": 9
+    },
+    "Neural Networks": {
+      "name": "Neural Networks Journal",
+      "category": "Machine Learning",
+      "weight": 8
+    },
+    "JAIR": {
+      "name": "Journal of Artificial Intelligence Research",
+      "category": "Artificial Intelligence",
+      "weight": 8
+    },
+    "MLJ": {
+      "name": "Machine Learning Journal",
+      "category": "Machine Learning",
+      "weight": 8
+    },
+    "TNN": {
+      "name": "IEEE Transactions on Neural Networks",
+      "category": "Machine Learning",
+      "weight": 8
+    },
+    "TSMC": {
+      "name": "IEEE Transactions on Systems, Man, and Cybernetics",
+      "category": "Systems",
+      "weight": 7
+    },
+    "Nature": {
+      "name": "Nature",
+      "category": "Multidisciplinary",
+      "weight": 10
+    },
+    "Science": {
+      "name": "Science",
+      "category": "Multidisciplinary",
+      "weight": 10
+    },
+    "Nature Machine Intelligence": {
+      "name": "Nature Machine Intelligence",
+      "category": "AI",
+      "weight": 9
+    }
+  }
+}

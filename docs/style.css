@@ -257,6 +257,85 @@ main {
     -webkit-box-orient: vertical;
 }
 
+/* 权威性相关样式 */
+.authority-badge {
+    background: linear-gradient(135deg, #fef08a 0%, #fcd34d 100%);
+    border: 2px solid #f59e0b;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.authority-score {
+    font-weight: bold;
+    font-size: 0.95rem;
+}
+
+.badges-container {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+.badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge-ccf-a {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border: 1px solid #fca5a5;
+}
+
+.badge-top-journal {
+    background-color: #dbeafe;
+    color: #0c4a6e;
+    border: 1px solid #7dd3fc;
+}
+
+.badge-citation-100+ {
+    background-color: #fce7f3;
+    color: #831843;
+    border: 1px solid #f472b6;
+}
+
+.badge-citation-50 {
+    background-color: #fce7f3;
+    color: #831843;
+    border: 1px solid #f472b6;
+}
+
+.badge-recent {
+    background-color: #d1fae5;
+    color: #065f46;
+    border: 1px solid #6ee7b7;
+}
+
+.authority-info {
+    background-color: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    padding: 1rem;
+    border-radius: 4px;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.authority-info p {
+    margin-bottom: 0.5rem;
+}
+
+.authority-info strong {
+    color: #92400e;
+}
+
 .paper-actions {
     display: flex;
     gap: 0.5rem;
@@ -408,5 +487,11 @@ main {
 
     .modal-content {
         width: 95%;
+    }
+    
+    .authority-badge {
+        flex-direction: column;
+        align-items: flex-start;
+        margin-top: 0.5rem;
     }
 }

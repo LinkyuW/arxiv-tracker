@@ -2,10 +2,8 @@
  * arXiv 论文追踪器 - 前端主程序
  */
 
-// API配置 (从 config.js 读取)
-const API_BASE_URL = (typeof API_CONFIG !== 'undefined') 
-  ? API_CONFIG.baseURL 
-  : 'http://localhost:5000/api';
+// API配置
+const API_BASE_URL = 'http://localhost:5000/api';
 
 // DOM元素缓存
 const elements = {
@@ -13,6 +11,7 @@ const elements = {
     searchBtn: document.getElementById('searchBtn'),
     clearBtn: document.getElementById('clearBtn'),
     aiSummaryCheckbox: document.getElementById('aiSummary'),
+    enableAuthorityCheckbox: document.getElementById('enableAuthority'),
     maxResultsSelect: document.getElementById('maxResults'),
     loading: document.getElementById('loading'),
     error: document.getElementById('error'),
@@ -74,10 +73,19 @@ async function handleSearch() {
     
     try {
         const maxResults = parseInt(elements.maxResultsSelect.value);
+        const enableAuthority = elements.enableAuthorityCheckbox.checked;
+        
+        // 构建查询参数
+        const params = new URLSearchParams({
+            query: query,
+            max_results: maxResults,
+            enable_authority: enableAuthority ? 'true' : 'false',
+            sort_by: enableAuthority ? 'authority' : 'date'
+        });
         
         // 调用API搜索论文
         const response = await fetch(
-            `${API_BASE_URL}/search?query=${encodeURIComponent(query)}&max_results=${maxResults}`
+            `${API_BASE_URL}/search?${params.toString()}`
         );
         
         if (!response.ok) {
@@ -98,6 +106,7 @@ async function handleSearch() {
             query,
             maxResults,
             aiSummary: elements.aiSummaryCheckbox.checked,
+            enableAuthority: elements.enableAuthorityCheckbox.checked,
             timestamp: Date.now()
         }));
         
@@ -108,7 +117,7 @@ async function handleSearch() {
         
         // 显示结果
         displayResults(papers);
-        showStats(papers.length, data.from_cache);
+        showStats(papers.length, data.from_cache, data.sort_by);
         
     } catch (error) {
         showError(`搜索出错: ${error.message}`);
@@ -189,15 +198,46 @@ function createPaperCard(paper) {
     const date = new Date(paper.published);
     const formattedDate = date.toLocaleDateString('zh-CN');
     
+    // 构建权威性标签
+    let authorityBadges = '';
+    if (paper.badges && paper.badges.length > 0) {
+        authorityBadges = paper.badges.map(badge => 
+            `<span class="badge badge-${badge.toLowerCase()}">${badge}</span>`
+        ).join('');
+    }
+    
+    // 构建权威性等级显示
+    let authorityDisplay = '';
+    if (paper.authority_score !== undefined) {
+        const score = paper.authority_score;
+        const level = paper.level || '○';
+        let scoreColor = 'gray';
+        if (score >= 85) scoreColor = 'red';
+        else if (score >= 70) scoreColor = 'orange';
+        else if (score >= 50) scoreColor = 'yellow';
+        
+        authorityDisplay = `
+            <div class="authority-badge">
+                <span class="authority-score" style="color: ${scoreColor};">${level} ${score}分</span>
+            </div>
+        `;
+    }
+    
     return `
         <div class="paper-card">
             <div class="paper-card-header">
-                <div class="paper-id">${paper.arxiv_id}</div>
-                <div class="paper-title">${escapeHtml(paper.title)}</div>
+                <div style="display: flex; justify-content: space-between; align-items: start;">
+                    <div>
+                        <div class="paper-id">${paper.arxiv_id}</div>
+                        <div class="paper-title">${escapeHtml(paper.title)}</div>
+                    </div>
+                    ${authorityDisplay}
+                </div>
                 <div class="paper-meta">
                     <strong>发布:</strong> ${formattedDate}
                 </div>
                 ${paper.categories ? `<span class="paper-category">${paper.categories}</span>` : ''}
+                ${authorityBadges ? `<div class="badges-container">${authorityBadges}</div>` : ''}
             </div>
             
             <div class="paper-summary">
@@ -224,6 +264,22 @@ function showPaperDetail(paper) {
     document.getElementById('detailSummary').textContent = paper.summary || '暂无摘要';
     document.getElementById('detailPdfLink').href = paper.pdf_url;
     document.getElementById('detailArxivLink').href = paper.url;
+    
+    // 显示权威性信息
+    const authoritySection = document.getElementById('authoritySection');
+    if (paper.authority_score !== undefined) {
+        document.getElementById('detailAuthorityScore').textContent = 
+            `${paper.authority_score}/100`;
+        document.getElementById('detailAuthorityLevel').textContent = 
+            paper.level || '未评分';
+        document.getElementById('detailCitations').textContent = 
+            paper.citation_count || '未知';
+        document.getElementById('detailAuthorityReasons').textContent = 
+            (paper.reasons || []).join('; ') || '无';
+        authoritySection.classList.remove('hidden');
+    } else {
+        authoritySection.classList.add('hidden');
+    }
     
     // 显示AI总结
     const aiSummarySection = document.getElementById('aiSummarySection');
@@ -276,13 +332,14 @@ async function clearCache() {
     }
 }
 
-function showStats(count, fromCache) {
+function showStats(count, fromCache, sortBy) {
     elements.resultCount.textContent = count;
     elements.stats.classList.remove('hidden');
     
-    if (fromCache) {
-        elements.stats.textContent = `找到 ${count} 篇论文 (来自缓存)`;
-    }
+    let cacheText = fromCache ? ' (来自缓存)' : '';
+    let sortText = sortBy === 'authority' ? '按权威性排序' : '按日期排序';
+    
+    elements.stats.textContent = `找到 ${count} 篇论文 - ${sortText}${cacheText}`;
 }
 
 function hideStats() {
