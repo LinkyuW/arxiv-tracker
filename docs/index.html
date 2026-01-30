@@ -61,7 +61,30 @@
                 <p>找到 <span id="resultCount">0</span> 篇论文</p>
             </div>
 
-            <!-- 论文列表 -->
+            <!-- 结果容器 - 两栏布局 -->
+            <div id="resultsContainer" class="results-container hidden">
+                <!-- 左栏：发展脉络总结 -->
+                <div class="left-column">
+                    <h2>发展脉络</h2>
+                    <div id="trajectorySection" class="section-card">
+                        <div id="trajectoryContent" class="loading-spinner">
+                            <p>正在生成发展脉络总结...</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 右栏：季度聚合 -->
+                <div class="right-column">
+                    <h2>季度汇总</h2>
+                    <div id="quarterlySection" class="quarterly-container">
+                        <div id="quarterlyContent" class="loading-spinner">
+                            <p>正在生成季度聚合...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 旧的论文列表（可选保留用于后续） -->
             <section id="results" class="papers-section"></section>
         </main>
 

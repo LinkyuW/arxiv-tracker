@@ -30,6 +30,7 @@ const elements = {
 // 状态管理
 let appState = {
     currentPapers: [],
+    apiResponse: null,  // 保存完整的API响应
     isLoading: false,
 };
 
@@ -88,7 +89,13 @@ async function handleSearch() {
             throw new Error(data.message || '搜索失败');
         }
         
-        const papers = data.data;
+        // 处理新的数据结构（可能包含trajectory_summary和quarterly_data）
+        let papers = data.data;
+        if (data.data.papers) {
+            // 新的API格式：包含papers、trajectory_summary和quarterly_data
+            papers = data.data.papers;
+            appState.apiResponse = data.data;  // 保存完整响应
+        }
         appState.currentPapers = papers;
         
         // 保存搜索到本地存储
@@ -107,6 +114,11 @@ async function handleSearch() {
         // 显示结果
         displayResults(papers);
         showStats(papers.length, data.from_cache);
+        
+        // 如果有完整的API响应数据，显示发展脉络和季度汇总
+        if (appState.apiResponse && appState.apiResponse.trajectory_summary !== undefined) {
+            displayTrajectoryAndQuarterly(appState.apiResponse);
+        }
         
     } catch (error) {
         showError(`搜索出错: ${error.message}`);
@@ -317,6 +329,74 @@ function showStats(count, fromCache) {
 
 function hideStats() {
     elements.stats.classList.add('hidden');
+}
+
+// ==================== 两栏显示：发展脉络和季度汇总 ====================
+
+function displayTrajectoryAndQuarterly(data) {
+    const resultsContainer = document.getElementById('resultsContainer');
+    
+    if (!resultsContainer) return;
+    
+    // 显示容器
+    resultsContainer.classList.remove('hidden');
+    
+    // 显示发展脉络总结（左栏）
+    displayTrajectory(data.trajectory_summary);
+    
+    // 显示季度聚合（右栏）
+    displayQuarterly(data.quarterly_data);
+}
+
+function displayTrajectory(trajectory) {
+    const trajectoryContent = document.getElementById('trajectoryContent');
+    
+    if (!trajectoryContent) return;
+    
+    if (trajectory) {
+        trajectoryContent.innerHTML = `<p>${escapeHtml(trajectory)}</p>`;
+    } else {
+        trajectoryContent.innerHTML = '<p style="color: var(--text-light);">暂无发展脉络总结</p>';
+    }
+}
+
+function displayQuarterly(quarterlyData) {
+    const quarterlyContent = document.getElementById('quarterlyContent');
+    
+    if (!quarterlyContent) return;
+    
+    if (!quarterlyData || quarterlyData.length === 0) {
+        quarterlyContent.innerHTML = '<p style="color: var(--text-light);">暂无季度数据</p>';
+        return;
+    }
+    
+    // 生成季度卡片HTML
+    const cardsHtml = quarterlyData.map(quarterly => `
+        <div class="quarterly-card">
+            <div class="quarterly-header">${quarterly.quarter}</div>
+            <div class="quarterly-stat">
+                <strong>论文数:</strong> ${quarterly.paper_count}篇
+            </div>
+            ${quarterly.top_venues && quarterly.top_venues.length > 0 ? `
+                <div class="quarterly-venues">
+                    <strong>主要会议:</strong><br>
+                    ${quarterly.top_venues.map(v => `<span>${v}</span>`).join('')}
+                </div>
+            ` : ''}
+            ${quarterly.sample_titles && quarterly.sample_titles.length > 0 ? `
+                <div style="font-size: 0.8rem; color: var(--text-light); margin-top: 0.5rem;">
+                    <strong>代表论文:</strong>
+                    <ul style="margin: 0.3rem 0; padding-left: 1.2rem;">
+                        ${quarterly.sample_titles.slice(0, 2).map(t => `
+                            <li style="font-size: 0.75rem;">${escapeHtml(t.substring(0, 50))}...</li>
+                        `).join('')}
+                    </ul>
+                </div>
+            ` : ''}
+        </div>
+    `).join('');
+    
+    quarterlyContent.innerHTML = cardsHtml;
 }
 
 // ==================== 错误处理 ====================

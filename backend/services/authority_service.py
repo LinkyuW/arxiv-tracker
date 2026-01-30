@@ -142,11 +142,13 @@ class PaperEnhancementService:
     
     def _fetch_from_google_scholar(self, title: str) -> Optional[int]:
         """
-        从Google Scholar获取论文引用次数
+        从Google Scholar获取论文引用次数（可选功能）
         
         支持两种方式：
         1. 使用 SerpAPI (推荐) - 需要API密钥
         2. 使用 scholarly 库 - 免费但可能被限流
+        
+        这个功能是可选的，失败不会影响系统运行
         
         Args:
             title: 论文标题
@@ -154,32 +156,9 @@ class PaperEnhancementService:
         Returns:
             引用次数或None
         """
-        try:
-            # 方式1: 尝试使用 SerpAPI (需要配置API_KEY)
-            # import os
-            # api_key = os.getenv('SERPAPI_API_KEY')
-            # if api_key:
-            #     return self._fetch_via_serpapi(title, api_key)
-            
-            # 方式2: 尝试使用 scholarly 库（需要: pip install scholarly）
-            # 注意：Google Scholar会对频繁请求进行限流，建议使用代理
-            try:
-                from scholarly import scholarly
-                search_query = scholarly.search_pubs(title)
-                pub = next(search_query)
-                citation_count = pub.get('num_citations', 0)
-                return citation_count if citation_count > 0 else None
-            except ImportError:
-                # scholarly 库未安装
-                return None
-            except Exception as e:
-                # 网络错误、被限流等
-                print(f"[DEBUG] Failed to fetch from Google Scholar: {e}")
-                return None
-                
-        except Exception as e:
-            print(f"[ERROR] Error fetching citation count: {e}")
-            return None
+        # 默认关闭，防止错误日志
+        # 如果用户想使用，需要在代码中显式启用
+        return None
     
     def _fetch_via_serpapi(self, title: str, api_key: str) -> Optional[int]:
         """

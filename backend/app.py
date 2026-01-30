@@ -12,6 +12,7 @@ from services.arxiv_service import ArxivService
 from services.ai_service import AIService
 from services.cache_service import CacheService
 from services.authority_service import PaperEnhancementService
+from services.analysis_service import PaperAnalysisService
 
 # 加载环境变量
 load_dotenv()
@@ -56,6 +57,9 @@ if app.config.get('GEMINI_API_KEY'):
     except Exception as e:
         print(f"Warning: Could not initialize AI service: {e}")
 
+# 论文分析服务（用于生成总结和聚合）
+analysis_service = PaperAnalysisService(ai_service=ai_service)
+
 
 # ==================== 路由 ====================
 
@@ -93,7 +97,7 @@ def search_papers():
             'message': '搜索关键词不能为空'
         }), 400
     
-    days_back = request.args.get('days_back', type=int, default=365*5)
+    days_back = request.args.get('days_back', type=int, default=365*3)  # 改为3年
     max_results = request.args.get('max_results', type=int, default=100)
     
     # 检查缓存
@@ -114,13 +118,39 @@ def search_papers():
     # 为论文添加发表信息（会议/期刊名称、CCF等级、引用数）
     if papers:
         papers = enhancement_service.enrich_papers(papers)
+        
+        # 生成发展脉络总结（左栏）
+        trajectory_summary = analysis_service.generate_trajectory_summary(papers)
+        
+        # 生成季度聚合数据（右栏）
+        quarterly_data = analysis_service.get_quarterly_aggregates(papers)
+        
         # 缓存结果
-        cache_service.set(cache_key, papers)
+        cache_service.set(cache_key, {
+            'papers': papers,
+            'trajectory_summary': trajectory_summary,
+            'quarterly_data': quarterly_data
+        })
+        
+        return jsonify({
+            'status': 'success',
+            'message': f'找到 {len(papers)} 篇论文',
+            'data': {
+                'papers': papers,
+                'trajectory_summary': trajectory_summary,
+                'quarterly_data': quarterly_data
+            },
+            'from_cache': False
+        })
     
     return jsonify({
         'status': 'success',
-        'message': f'找到 {len(papers)} 篇论文',
-        'data': papers,
+        'message': '未找到相关论文',
+        'data': {
+            'papers': [],
+            'trajectory_summary': None,
+            'quarterly_data': []
+        },
         'from_cache': False
     })
 
@@ -186,6 +216,62 @@ def get_publication_info():
         'status': 'success',
         'message': f'获取了 {len(results)} 篇论文的发表信息',
         'data': results
+    })
+
+
+@app.route('/api/trajectory', methods=['POST'])
+def get_trajectory_summary():
+    """
+    获取论文发展脉络总结
+    
+    请求体:
+        {
+            "papers": [...论文列表...]
+        }
+    """
+    data = request.get_json()
+    
+    if not data or 'papers' not in data:
+        return jsonify({
+            'status': 'error',
+            'message': '请提供papers列表'
+        }), 400
+    
+    papers = data['papers']
+    max_length = data.get('max_length', 500)
+    
+    trajectory = analysis_service.generate_trajectory_summary(papers, max_length)
+    
+    return jsonify({
+        'status': 'success',
+        'data': trajectory
+    })
+
+
+@app.route('/api/quarterly', methods=['POST'])
+def get_quarterly_data():
+    """
+    获取季度聚合数据
+    
+    请求体:
+        {
+            "papers": [...论文列表...]
+        }
+    """
+    data = request.get_json()
+    
+    if not data or 'papers' not in data:
+        return jsonify({
+            'status': 'error',
+            'message': '请提供papers列表'
+        }), 400
+    
+    papers = data['papers']
+    quarterly_data = analysis_service.get_quarterly_aggregates(papers)
+    
+    return jsonify({
+        'status': 'success',
+        'data': quarterly_data
     })
 
 
