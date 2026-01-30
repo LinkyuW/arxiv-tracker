@@ -295,9 +295,7 @@ MIT License
 5. 开启Pull Request
 
 ## 联系方式
-
-- GitHub Issues: [报告Bug或提出建议](https://github.com/yourusername/arxiv-tracker/issues)
-- 电子邮件: your.email@example.com
+- 电子邮件: pxqqwq@qq.com
 
 ## 参考资源
 
@@ -317,5 +315,5 @@ MIT License
 
 ---
 
-**最后更新**: 2024年1月
-**维护者**: [Your Name]
+**最后更新**: 2026年1月
+**维护者**: [Linkyu]
